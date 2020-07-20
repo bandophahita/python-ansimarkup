@@ -1,5 +1,5 @@
 from __future__ import print_function
-
+from typing import Optional, Tuple, Type, AnyStr
 import re
 
 from colorama import Style
@@ -23,7 +23,8 @@ class AnsiMarkup:
     Produce colored terminal text with a tag-based markup.
     '''
 
-    def __init__(self, tags=None, always_reset=False, strict=False, tag_sep='<>', ansistring_cls=None):
+    def __init__(self, tags: Optional[dict] = None, always_reset: bool = False, strict: bool = False,
+                 tag_sep: str = '<>', ansistring_cls: Optional['AnsiMarkupString'] = None):
         '''
         Arguments
         ---------
@@ -39,15 +40,15 @@ class AnsiMarkup:
         ansistring_cls: type
            Class to use in ``ansistring()`` method.
         '''
-        self.user_tags = tags if tags else {}
-        self.always_reset = always_reset
-        self.strict = strict
-        self.tag_sep = tag_sep
-        self.ansistring_cls = ansistring_cls if ansistring_cls else AnsiMarkupString
+        self.user_tags: dict = tags if tags else {}
+        self.always_reset: bool = always_reset
+        self.strict: bool = strict
+        self.tag_sep: str = tag_sep
+        self.ansistring_cls: Type['AnsiMarkupString'] = ansistring_cls if ansistring_cls else AnsiMarkupString
 
-        self.re_tag = self.compile_tag_regex(tag_sep)
+        self.re_tag: re.Pattern = self.compile_tag_regex(tag_sep)
 
-    def parse(self, text):
+    def parse(self, text: AnyStr) -> AnyStr:
         '''Return a string with markup tags converted to ansi-escape sequences.'''
         tags, results = [], []
 
@@ -68,18 +69,18 @@ class AnsiMarkup:
         args = (self.parse(str(i)) for i in args)
         builtins.print(*args, **kwargs)
 
-    def strip(self, text):
+    def strip(self, text: AnyStr) -> AnyStr:
         '''Return string with markup tags removed.'''
         tags, results = [], []
         return self.re_tag.sub(lambda m: self.clear_tag(m, tags, results), text)
 
-    def ansistring(self, markup):
-        return self.ansistring_cls(self, markup)
+    def ansistring(self, markup: AnyStr):
+        return self.ansistring_cls(markup)
 
-    def __call__(self, text):
+    def __call__(self, text: AnyStr):
         return self.parse(text)
 
-    def sub_tag(self, match, tag_list, res_list):
+    def sub_tag(self, match: re.Match, tag_list: list, res_list: list):
         markup, tag = match.group(0), match.group(1)
         closing = markup[1] == '/'
         res = None
@@ -152,7 +153,7 @@ class AnsiMarkup:
 
         return res
 
-    def clear_tag(self, match, tag_list, res_list):
+    def clear_tag(self, match: re.Match, tag_list: list, res_list: list):
         pre_length = len(tag_list)
         try:
             self.sub_tag(match, tag_list, res_list)
@@ -169,7 +170,7 @@ class AnsiMarkup:
         except (UnbalancedTag, MismatchedTag):
             return ''
 
-    def compile_tag_regex(self, tag_sep):
+    def compile_tag_regex(self, tag_sep: str) -> re.Pattern:
         # Optimize the default:
         if tag_sep == '<>':
             tag_regex = re.compile(r'</?([^<>]+)>')
@@ -208,7 +209,7 @@ class AnsiMarkupString(str):
 
     '''
 
-    def __new__(cls, am, markup):
+    def __new__(cls, am: 'AnsiMarkup', markup: AnyStr):
         parsed = am.parse(markup)
 
         new_str = str.__new__(cls, parsed)
@@ -228,6 +229,6 @@ class AnsiMarkupString(str):
         return self.markup
 
 
-def hex_to_rgb(value):
+def hex_to_rgb(value: str) -> Tuple[int, ...]:
     return tuple(int(value[i:i + 2], 16) for i in (0, 2, 4))
     #return tuple(bytes.fromhex(value))

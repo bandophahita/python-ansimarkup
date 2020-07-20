@@ -9,7 +9,7 @@ class AnsiMarkupFormatter(logging.Formatter):
         self.ansimarkup = markup.AnsiMarkup()
         super(AnsiMarkupFormatter, self).__init__(*args)
 
-    def format(self, record):
+    def format(self, record: logging.LogRecord):
         message = super(AnsiMarkupFormatter, self).format(record)
         message = self.ansimarkup.parse(message)
         return message
